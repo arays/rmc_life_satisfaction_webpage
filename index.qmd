@@ -26,7 +26,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 # Load packages
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(plotly, tidyverse, reactable, here, scales)
+pacman::p_load(plotly, tidyverse, reactable, here, scales,
+               htmltools, crosstalk, plotly, dplyr, shiny)
 ```
 
 ```{r}
@@ -186,12 +187,76 @@ function filter_default() {
 window.onload = filter_default;
 </script>
 
-
+##  optional challenge
 ```{r}
 # OPTIONAL CHALLENGE SECTION:
 
 # Add a final tab with a single figure that shows the top 10 and bottom 10 countries by happiness score in 2023. Remember to add a ## header and include it in the tabsets
-# "WRITE_YOUR_CODE_HERE"
+
+#our data manipulation and plots
+shared_cantril_data <- highlight_key(cantril)
+
+cantril_plotly <- plot_ly(
+    shared_cantril_data,
+    x = ~Year,
+    y = ~`Cantril ladder score`,
+    color = ~Country,
+    type = "scatter",
+    mode = "lines+markers"
+) %>%
+  layout(yaxis = list(range = c(0, 10)))
+
+country_filter <- filter_select(
+    "country_filter",
+    "Select a country to examine",
+    shared_cantril_data,
+    ~Country,
+    multiple = TRUE
+)
+
+first_tab <- bscols(
+    list(country_filter, cantril_plotly)
+)
+
+cantril_2023 <- cantril %>%
+    filter(Year == 2023) %>%
+    select(Country, `Cantril ladder score`) %>%
+    arrange(desc(`Cantril ladder score`))
+
+top_10 <- head(cantril_2023, 10)
+bottom_10 <- tail(cantril_2023, 10)
+
+top_bottom_10 <- bind_rows(top_10, bottom_10) %>%
+  mutate(rank_group = ifelse(row_number() <= 10, "Top 10", "Bottom 10"))
+
+top_bottom_plot <- plot_ly(
+    data = top_bottom_10,
+    x = ~`Cantril ladder score`,
+    y = ~reorder(Country, `Cantril ladder score`),
+    type = "bar",
+    orientation = "h",
+    color = ~rank_group,
+    colors = c("steelblue", "firebrick")
+) %>%
+    layout(
+        title = "Top 10 and Bottom 10 Countries by Happiness Score (2023)",
+        xaxis = list(title = "Cantril Ladder Score"),
+        yaxis = list(title = "Countries"),
+        showlegend = TRUE
+    )
+
+# Display everything
+browsable(
+    tagList(
+        tags$h2("World Happiness Report Explorer"),
+        navlistPanel(
+            "Navigation",
+            tabPanel("Top & Bottom 10 in 2023", top_bottom_plot)
+        )
+    )
+)
+
+
 ```
 
 
