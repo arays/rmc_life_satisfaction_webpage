@@ -1,7 +1,7 @@
 ---
 title: "Self-reported life satisfaction, 2011 to 2023"
 subtitle: "Replicating the Our World in Data Grapher"
-author: "YOUR NAME HERE" # Remember to add your name!
+author: "Abdullahi" # Remember to add your name!
 theme: united
 ---
 
@@ -31,11 +31,10 @@ pacman::p_load(plotly, tidyverse, reactable, here, scales)
 
 ```{r}
 ## Import data
-cantril <-
-    read_csv(here("data/happiness-cantril-ladder.csv")) %>%
+cantril <-read_csv(here("data/happiness-cantril-ladder.csv")) %>%
     rename(Country = Entity)
 ```
-
+::: {.panel-tabset}
 ### Happiness across the world over time
 
 The World Happiness Report is a well-known source of cross-country data on self-reported life satisfaction, collected by the Gallup World Poll. The visualizations below present the ‘happiness scores’ for each country.
@@ -44,7 +43,7 @@ The main life evaluation question asked in the poll is the Cantril Life Ladder q
 
 > “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?”
 
-
+::: {.panel-tabset}
 ## 🔢 Table
 
 **Average self-reported life satisfaction** – Cantril Ladder score (0=worst; 10=best)
@@ -63,7 +62,13 @@ The main life evaluation question asked in the poll is the Cantril Life Ladder q
 # 5. Also with `mutate`, you should round your numbers to appropriate decimal places.
 # 6. Then use scales::percent to format the Relative change as a percentage.
 # 7. Use the `reactable` function to create and output the table.
-"WRITE_YOUR_CODE_HERE"
+cantril_subset <- cantril %>% 
+  filter(Year==c(2011,2023)) %>% 
+  pivot_wider(names_from ="Year",
+              values_from = `Cantril ladder score`) %>% 
+  mutate(absolute_change=2023-2011,
+         relative_change=scales:: percent((`2023`-`2011`)/`2011`, accuracy=0.01)) 
+reactable(cantril_subset)
 ```
 
 
@@ -108,8 +113,23 @@ cantril %>%
 # 5. Use labs to create neat labels for the chart
 # 6. Use theme_minimal to set the theme.
 # 7. Finally, use ggplotly to convert the ggplot chart to a plotly chart
+cantril_country <- cantril %>%
+  filter(Country ==c("Ghana", "Kenya", "Nigeria", "Senegal","Rwanda"))
 
-"WRITE_YOUR_CODE_HERE"
+cantril_plots <- ggplot(data=cantril_country,
+       aes(x=Year,
+           y=`Cantril ladder score`,
+           fill= Country,
+           colour = Country))+
+  geom_line()+
+  geom_point()+
+  scale_y_continuous(limits=c(0,10))+
+  labs(
+    x="Year",
+    y= "Ladder score",
+    title= "World happiness score over time for selected countries in Africa"
+  )
+  ggplotly(cantril_plots)
 # (When you're done with this section, don't forget to add tabsets, as mentioned in the instructions.)
 ```
 
@@ -180,3 +200,4 @@ window.onload = filter_default;
 Data source: World Happiness Report
 
 [OurWorldInData.org/happiness-and-life-satisfaction](https://ourworldindata.org/grapher/happiness-cantril-ladder) | CC BY
+:::
